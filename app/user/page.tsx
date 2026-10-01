@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 export default function UserDashboard() {
+  // Form State
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
   const [pincode, setPincode] = useState('');
@@ -16,6 +17,7 @@ export default function UserDashboard() {
   const [description, setDescription] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
 
+  // Advanced Feature States
   const [sammanPoints, setSammanPoints] = useState(150);
   const [showPointsModal, setShowPointsModal] = useState(false);
   const [showAiChat, setShowAiChat] = useState(false);
@@ -24,10 +26,12 @@ export default function UserDashboard() {
     { sender: 'ai', text: 'Namaste! Main Setu AI hoon. Aap apni shiqayat yahan likh sakte hain ya bol sakte hain, main aapka form automatically fill kar dunga!' }
   ]);
   
+  // Rating Modal State
   const [ratingModalGrievance, setRatingModalGrievance] = useState<any>(null);
   const [ratingStars, setRatingStars] = useState(5);
   const [feedbackText, setFeedbackText] = useState('');
 
+  // Dummy Grievance History
   const [grievances, setGrievances] = useState([
     {
       id: 'NS-8492',
@@ -40,16 +44,29 @@ export default function UserDashboard() {
       date: '2026-09-29',
       rating: null,
       feedback: null
+    },
+    {
+      id: 'NS-7321',
+      title: 'Pothole leakage on sector 4 road',
+      department: 'Municipal Corporation',
+      urgency: 'High',
+      location: 'Noida, UP - 201301',
+      status: 'Resolved & Verified',
+      stepIndex: 5,
+      date: '2026-09-25',
+      rating: 4,
+      feedback: 'Quick response by field technician.'
     }
   ]);
 
-  // Load from localStorage on mount
+  // Load complaints from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('nagrik_complaints');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Map to user format if needed
           const mapped = parsed.map((item: any) => ({
             id: item.id || 'NS-9999',
             title: item.description ? item.description.split(':')[0] : 'Civic Grievance',
@@ -62,7 +79,7 @@ export default function UserDashboard() {
             rating: null,
             feedback: null
           }));
-          setGrievances(mapped);
+          setGrievances(prev => [...mapped, ...prev]);
         }
       } catch (err) {
         console.error(err);
@@ -70,59 +87,57 @@ export default function UserDashboard() {
     }
   }, []);
 
+  // Handle Form Submission
   const handleSubmitGrievance = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !location) {
       alert('Please fill in the grievance title and location.');
       return;
     }
+    const newG = {
+      id: `NS-${Math.floor(1000 + Math.random() * 9000)}`,
+      title,
+      department: category === 'Roads & Infrastructure' ? 'Municipal Corporation' : 'Electricity Board',
+      urgency: urgency.split(' ')[0],
+      location: `${location} - ${pincode || '110001'}`,
+      status: 'AI Categorized & Assigned',
+      stepIndex: 2,
+      date: new Date().toISOString().split('T')[0],
+      rating: null,
+      feedback: null
+    };
 
-    const newId = `NS-${Math.floor(1000 + Math.random() * 9000)}`;
-    const currentDate = new Date().toISOString().split('T')[0];
+    const updatedList = [newG, ...grievances];
+    setGrievances(updatedList);
+    setSammanPoints(prev => prev + 25);
 
-    const newAdminComplaint = {
-      id: newId,
+    // Also sync to localStorage so Admin dashboard gets it instantly
+    const adminComplaint = {
+      id: newG.id,
       name: localStorage.getItem('nagrik_user_name') || 'Ganesh Chandra Sethi',
       email: localStorage.getItem('nagrik_user_email') || 'ganesh@srinix.edu.in',
-      govId: 'AADHAAR-VERIFIED',
-      location: `${location} - ${pincode || '110001'}`,
+      govId: 'VERIFIED-ID',
+      location: newG.location,
       category: category,
       description: `${title}: ${description}`,
       image: '',
-      date: currentDate,
+      date: newG.date,
       status: 'Pending',
       isFrozen: false,
       unfreezeRequested: false
     };
 
-    // Save directly to localStorage for Admin Dashboard sync
     const existingAdmin = JSON.parse(localStorage.getItem('nagrik_complaints') || '[]');
-    const updatedAdminList = [newAdminComplaint, ...existingAdmin];
-    localStorage.setItem('nagrik_complaints', JSON.stringify(updatedAdminList));
-
-    // Update local state for user view
-    const newUserItem = {
-      id: newId,
-      title,
-      department: category,
-      urgency: urgency.split(' ')[0],
-      location: `${location} - ${pincode || '110001'}`,
-      status: 'Pending',
-      stepIndex: 1,
-      date: currentDate,
-      rating: null,
-      feedback: null
-    };
-    setGrievances([newUserItem, ...grievances]);
-    setSammanPoints(prev => prev + 25);
+    localStorage.setItem('nagrik_complaints', JSON.stringify([adminComplaint, ...existingAdmin]));
 
     setTitle('');
     setLocation('');
     setPincode('');
     setDescription('');
-    alert('Grievance successfully submitted and instantly synced to Admin Command Center! +25 Samman Points added.');
+    alert('Grievance successfully raised & synced to Command Center! +25 Samman Points added.');
   };
 
+  // Setu AI Assistant Logic
   const handleAiChatSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!aiInput.trim()) return;
@@ -159,6 +174,8 @@ export default function UserDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/55 to-emerald-50 text-gray-900 pb-16">
+      
+      {/* Top Header */}
       <header className="bg-white/90 backdrop-blur-md border-b-2 border-orange-300 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
@@ -196,7 +213,10 @@ export default function UserDashboard() {
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-600 to-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow">
                 GS
               </div>
-              <a href="/" className="text-xs font-bold text-gray-700 hover:text-red-600 transition flex items-center space-x-1">
+              <a 
+                href="/" 
+                className="text-xs font-bold text-gray-700 hover:text-red-600 transition flex items-center space-x-1"
+              >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
               </a>
@@ -205,8 +225,10 @@ export default function UserDashboard() {
         </div>
       </header>
 
+      {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         
+        {/* Setu AI Floating Assistant Banner */}
         <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           <div className="space-y-2 text-center sm:text-left z-10">
@@ -230,6 +252,7 @@ export default function UserDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
+          {/* Grievance Submission Form */}
           <div className="lg:col-span-2 bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
             <div className="flex items-center justify-between border-b pb-4 border-orange-100">
               <div>
@@ -361,7 +384,9 @@ export default function UserDashboard() {
             </form>
           </div>
 
+          {/* Right Column: Map Widget & Emergency Bar */}
           <div className="space-y-6">
+            
             <div className="bg-white/90 backdrop-blur border-2 border-emerald-200 rounded-3xl p-6 shadow-xl space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-black text-gray-900 flex items-center space-x-2">
@@ -427,6 +452,7 @@ export default function UserDashboard() {
 
         </div>
 
+        {/* Grievance History */}
         <div className="bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-4 border-orange-100">
             <div>
@@ -439,8 +465,9 @@ export default function UserDashboard() {
           </div>
 
           <div className="space-y-6">
-            {grievances.map((g) => (
-              <div key={g.id} className="bg-orange-50/40 border-2 border-orange-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
+            {grievances.map((g, index) => (
+              <div key={g.id + '-' + index} className="bg-orange-50/40 border-2 border-orange-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
+                
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div className="space-y-1">
                     <div className="flex items-center space-x-2">
@@ -461,11 +488,29 @@ export default function UserDashboard() {
                     }`}>
                       {g.status}
                     </span>
+                    
+                    {g.stepIndex === 5 && !g.rating && (
+                      <button 
+                        onClick={() => setRatingModalGrievance(g)}
+                        className="bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold text-xs px-3 py-1.5 rounded-xl shadow hover:opacity-90 transition flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        <span>Rate Service</span>
+                      </button>
+                    )}
+                    {g.rating && (
+                      <span className="text-xs font-bold bg-amber-50 text-amber-800 px-2 py-1 rounded-lg border border-amber-200 flex items-center space-x-1">
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-current" />
+                        <span>{g.rating} / 5 Rated</span>
+                      </span>
+                    )}
                   </div>
                 </div>
 
+                {/* Step-by-Step Visual Timeline */}
                 <div className="pt-2 border-t border-orange-200/60">
                   <p className="text-[11px] font-black uppercase text-gray-500 tracking-wider mb-3">Live Progress Timeline</p>
+                  
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
                     <div className={`p-2 rounded-xl border ${g.stepIndex >= 1 ? 'bg-orange-100 border-orange-300 text-orange-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
                       <div className="text-xs font-black">1. Submitted</div>
@@ -489,6 +534,7 @@ export default function UserDashboard() {
                     </div>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
@@ -496,13 +542,17 @@ export default function UserDashboard() {
 
       </main>
 
+      {/* Footer */}
       <footer className="py-6 text-center text-xs font-bold text-orange-900 bg-white/60 backdrop-blur border-t border-orange-200 mt-12">
         <p>✨ NagrikSetu Smart Governance • Empowering Citizens with Complete Accountability ✨</p>
       </footer>
 
+      {/* --- MODALS --- */}
+
+      {/* Samman Points & Rewards Modal */}
       {showPointsModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border-2 border-amber-300">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border-2 border-amber-300 animate-in fade-in zoom-in">
             <div className="flex justify-between items-center border-b pb-3 border-amber-100">
               <div className="flex items-center space-x-2">
                 <Award className="w-6 h-6 text-amber-600" />
@@ -519,6 +569,21 @@ export default function UserDashboard() {
               <p className="text-xs text-amber-100">Civic Champion Tier • Level 2 Contributor</p>
             </div>
 
+            <div className="space-y-3">
+              <p className="text-xs font-black uppercase text-gray-600 tracking-wider">Redeemable Digital Badges</p>
+              
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center font-bold text-amber-900">🛡️</div>
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900">Civic Guardian Certificate</h4>
+                    <p className="text-[10px] text-gray-600">Cost: 100 Points (Unlocked)</p>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">Owned</span>
+              </div>
+            </div>
+
             <button 
               onClick={() => setShowPointsModal(false)}
               className="w-full bg-gray-900 text-white font-extrabold py-3 rounded-xl hover:bg-gray-800 transition text-sm cursor-pointer"
@@ -529,9 +594,10 @@ export default function UserDashboard() {
         </div>
       )}
 
+      {/* Setu AI Real Chat Assistant Modal */}
       {showAiChat && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full h-[550px] flex flex-col shadow-2xl border-2 border-orange-300 overflow-hidden">
+          <div className="bg-white rounded-3xl max-w-lg w-full h-[550px] flex flex-col shadow-2xl border-2 border-orange-300 overflow-hidden animate-in fade-in zoom-in">
             <div className="bg-gradient-to-r from-orange-600 to-emerald-700 p-4 text-white flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-5 h-5 text-amber-300 animate-spin" />
@@ -574,6 +640,58 @@ export default function UserDashboard() {
           </div>
         </div>
       )}
+
+      {/* Rating Modal */}
+      {ratingModalGrievance && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border-2 border-amber-300">
+            <div className="flex justify-between items-center border-b pb-3 border-amber-100">
+              <h3 className="text-lg font-black text-gray-900">Rate Resolved Service</h3>
+              <button onClick={() => setRatingModalGrievance(null)} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-600">Please rate how quickly and effectively the field team resolved your grievance ({ratingModalGrievance.id}).</p>
+
+            <div className="flex justify-center space-x-2 py-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button 
+                  key={star}
+                  type="button"
+                  onClick={() => setRatingStars(star)}
+                  className={`p-1 cursor-pointer transition transform hover:scale-110 ${star <= ratingStars ? 'text-amber-500' : 'text-gray-300'}`}
+                >
+                  <Star className="w-8 h-8 fill-current" />
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              rows={3}
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Write optional feedback or comments..."
+              className="w-full bg-orange-50/50 border border-orange-300 rounded-xl p-3 text-xs font-medium focus:outline-none focus:border-orange-500"
+            ></textarea>
+
+            <button 
+              onClick={() => {
+                const updated = grievances.map(item => item.id === ratingModalGrievance.id ? { ...item, rating: ratingStars, feedback: feedbackText } : item);
+                setGrievances(updated);
+                setSammanPoints(prev => prev + 10);
+                setRatingModalGrievance(null);
+                setFeedbackText('');
+                alert('Thank you! Rating submitted successfully and +10 Samman points added.');
+              }}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white font-extrabold py-3 rounded-xl hover:opacity-95 transition text-xs shadow-md cursor-pointer"
+            >
+              Submit Rating & Feedback
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
