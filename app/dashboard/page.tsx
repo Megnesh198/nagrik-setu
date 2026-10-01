@@ -67,8 +67,9 @@ export default function UserDashboard() {
     return () => clearInterval(timer);
   }, []);
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount (Safe for Next.js SSR / Vercel)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const saved = localStorage.getItem('nagrik_complaints');
     if (saved) {
       try {
@@ -126,11 +127,14 @@ export default function UserDashboard() {
     const newId = `NS-${Math.floor(1000 + Math.random() * 9000)}`;
     const currentDate = new Date().toISOString().split('T')[0];
 
+    const userName = typeof window !== 'undefined' ? localStorage.getItem('nagrik_user_name') || 'Ganesh Chandra Sethi' : 'Ganesh Chandra Sethi';
+    const userEmail = typeof window !== 'undefined' ? localStorage.getItem('nagrik_user_email') || 'ganesh@srinix.edu.in' : 'ganesh@srinix.edu.in';
+
     const newAdminComplaint = {
       id: newId,
-      name: localStorage.getItem('nagrik_user_name') || 'Ganesh Chandra Sethi',
-      email: localStorage.getItem('nagrik_user_email') || 'ganesh@srinix.edu.in',
-      govId: 'AADHAAR-VERIFIED',
+      name: userName,
+      email: userEmail,
+      govId: 'VERIFIED-CITIZEN',
       location: `${location} - ${pincode || '110001'}`,
       category: category,
       description: `${title}: ${description}`,
@@ -141,9 +145,11 @@ export default function UserDashboard() {
       unfreezeRequested: false
     };
 
-    const existingAdmin = JSON.parse(localStorage.getItem('nagrik_complaints') || '[]');
-    const updatedAdminList = [newAdminComplaint, ...existingAdmin];
-    localStorage.setItem('nagrik_complaints', JSON.stringify(updatedAdminList));
+    if (typeof window !== 'undefined') {
+      const existingAdmin = JSON.parse(localStorage.getItem('nagrik_complaints') || '[]');
+      const updatedAdminList = [newAdminComplaint, ...existingAdmin];
+      localStorage.setItem('nagrik_complaints', JSON.stringify(updatedAdminList));
+    }
 
     const newUserItem = {
       id: newId,
@@ -214,7 +220,7 @@ export default function UserDashboard() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/55 to-emerald-50 text-gray-900 pb-16">
       <header className="bg-white/90 backdrop-blur-md border-b-2 border-orange-300 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.location.href = '/'}>
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { if (typeof window !== 'undefined') window.location.href = '/'; }}>
             <div className="bg-gradient-to-tr from-orange-600 via-amber-500 to-emerald-700 text-white p-2 rounded-xl font-bold text-lg shadow-md border border-amber-300">
               NS
             </div>
@@ -725,7 +731,7 @@ export default function UserDashboard() {
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-orange-50/30">
-              {aiChatMessages.link ? null : aiChatMessages.map((msg, index) => (
+              {aiChatMessages.map((msg, index) => (
                 <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-3 rounded-2xl text-xs font-medium shadow-sm ${
                     msg.sender === 'user' 
