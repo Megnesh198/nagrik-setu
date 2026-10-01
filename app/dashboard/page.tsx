@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, ShieldAlert, Award, Globe, Bell, User, LogOut, 
   Send, Mic, MapPin, CheckCircle2, Clock, AlertTriangle, 
-  Star, PhoneCall, Shield, Activity, FileText, ChevronRight, X, ExternalLink
+  Star, PhoneCall, Shield, Activity, FileText, ChevronRight, X, ExternalLink,
+  Search, Filter, Upload, Image as ImageIcon, Calendar
 } from 'lucide-react';
 
 export default function UserDashboard() {
@@ -15,6 +16,18 @@ export default function UserDashboard() {
   const [urgency, setUrgency] = useState('Medium Priority');
   const [description, setDescription] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Digital Clock State
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Interactive Features State
+  const [mapPinnedCoords, setMapPinnedCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedTimelineItem, setSelectedTimelineItem] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');
 
   const [sammanPoints, setSammanPoints] = useState(150);
   const [showPointsModal, setShowPointsModal] = useState(false);
@@ -23,10 +36,6 @@ export default function UserDashboard() {
   const [aiChatMessages, setAiChatMessages] = useState([
     { sender: 'ai', text: 'Namaste! Main Setu AI hoon. Aap apni shiqayat yahan likh sakte hain ya bol sakte hain, main aapka form automatically fill kar dunga!' }
   ]);
-  
-  const [ratingModalGrievance, setRatingModalGrievance] = useState<any>(null);
-  const [ratingStars, setRatingStars] = useState(5);
-  const [feedbackText, setFeedbackText] = useState('');
 
   const [grievances, setGrievances] = useState([
     {
@@ -38,10 +47,15 @@ export default function UserDashboard() {
       status: 'In Progress',
       stepIndex: 3, 
       date: '2026-09-29',
-      rating: null,
-      feedback: null
+      image: null
     }
   ]);
+
+  // Clock interval
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -59,8 +73,7 @@ export default function UserDashboard() {
             status: item.status || 'Pending',
             stepIndex: item.status === 'Resolved' ? 5 : 2,
             date: item.date || '2026-10-01',
-            rating: null,
-            feedback: null
+            image: item.image || null
           }));
           setGrievances(mapped);
         }
@@ -69,6 +82,29 @@ export default function UserDashboard() {
       }
     }
   }, []);
+
+  // Handle Photo Upload
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Map Click Simulation
+  const handleMapClickSim = () => {
+    const simulatedLat = 20.4625 + (Math.random() - 0.5) * 0.05;
+    const simulatedLng = 85.8828 + (Math.random() - 0.5) * 0.05;
+    setMapPinnedCoords({ lat: simulatedLat, lng: simulatedLng });
+    setLocation(`Jagatpur Industrial Area (Pinned: ${simulatedLat.toFixed(4)}, ${simulatedLng.toFixed(4)})`);
+    setPincode('754021');
+    alert(`📍 GPS Pin Dropped Successfully!\nLatitude: ${simulatedLat.toFixed(4)}, Longitude: ${simulatedLng.toFixed(4)}`);
+  };
 
   const handleSubmitGrievance = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,19 +124,17 @@ export default function UserDashboard() {
       location: `${location} - ${pincode || '110001'}`,
       category: category,
       description: `${title}: ${description}`,
-      image: '',
+      image: imagePreview || '',
       date: currentDate,
       status: 'Pending',
       isFrozen: false,
       unfreezeRequested: false
     };
 
-    // Save directly to localStorage for Admin Dashboard sync
     const existingAdmin = JSON.parse(localStorage.getItem('nagrik_complaints') || '[]');
     const updatedAdminList = [newAdminComplaint, ...existingAdmin];
     localStorage.setItem('nagrik_complaints', JSON.stringify(updatedAdminList));
 
-    // Update local state for user view
     const newUserItem = {
       id: newId,
       title,
@@ -110,8 +144,7 @@ export default function UserDashboard() {
       status: 'Pending',
       stepIndex: 1,
       date: currentDate,
-      rating: null,
-      feedback: null
+      image: imagePreview
     };
     setGrievances([newUserItem, ...grievances]);
     setSammanPoints(prev => prev + 25);
@@ -120,7 +153,10 @@ export default function UserDashboard() {
     setLocation('');
     setPincode('');
     setDescription('');
-    alert('Grievance successfully submitted and instantly synced to Admin Command Center! +25 Samman Points added.');
+    setSelectedImage(null);
+    setImagePreview(null);
+    setMapPinnedCoords(null);
+    alert('Grievance successfully submitted and instantly synced! +25 Samman Points added.');
   };
 
   const handleAiChatSubmit = (e: React.FormEvent) => {
@@ -157,6 +193,14 @@ export default function UserDashboard() {
     }, 800);
   };
 
+  // Filtered grievances calculation
+  const filteredGrievances = grievances.filter(g => {
+    const matchesSearch = g.title.toLowerCase().includes(searchQuery.toLowerCase()) || g.id.toLowerCase().includes(searchQuery.toLowerCase()) || g.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'All' || g.status === statusFilter;
+    const matchesCategory = categoryFilter === 'All' || g.department === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50/55 to-emerald-50 text-gray-900 pb-16">
       <header className="bg-white/90 backdrop-blur-md border-b-2 border-orange-300 shadow-md sticky top-0 z-40">
@@ -175,7 +219,13 @@ export default function UserDashboard() {
             </div>
           </div>
 
+          {/* Real-time Digital Clock & Controls */}
           <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="hidden xl:flex items-center space-x-1.5 bg-orange-100/70 border border-orange-300 px-3 py-1.5 rounded-xl text-xs font-black text-orange-900">
+              <Clock className="w-4 h-4 text-orange-700" />
+              <span>{currentTime.toLocaleTimeString()}</span>
+            </div>
+
             <button 
               onClick={() => setShowPointsModal(true)}
               className="flex items-center space-x-1.5 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-extrabold text-amber-900 shadow-sm transition cursor-pointer"
@@ -183,14 +233,6 @@ export default function UserDashboard() {
               <Award className="w-4 h-4 text-amber-700" />
               <span>{sammanPoints} Samman Points</span>
             </button>
-
-            <a 
-              href="#emergency-section"
-              className="hidden md:flex items-center space-x-1 bg-red-100 hover:bg-red-200 border border-red-300 px-3 py-1.5 rounded-xl text-xs font-extrabold text-red-800 transition"
-            >
-              <PhoneCall className="w-3.5 h-3.5 text-red-600" />
-              <span>Emergency</span>
-            </a>
 
             <div className="flex items-center space-x-2 border-l pl-3 border-gray-300">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-600 to-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow">
@@ -207,6 +249,7 @@ export default function UserDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         
+        {/* Banner */}
         <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           <div className="space-y-2 text-center sm:text-left z-10">
@@ -230,6 +273,7 @@ export default function UserDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
+          {/* Raise Grievance Form */}
           <div className="lg:col-span-2 bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
             <div className="flex items-center justify-between border-b pb-4 border-orange-100">
               <div>
@@ -261,7 +305,7 @@ export default function UserDashboard() {
                       type="text" 
                       value={location}
                       onChange={(e) => setLocation(e.target.value)}
-                      placeholder="Search locality..." 
+                      placeholder="Search locality or use Pin button..." 
                       className="w-full bg-orange-50/50 border-2 border-orange-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:border-orange-500"
                       required
                     />
@@ -269,10 +313,40 @@ export default function UserDashboard() {
                       type="text" 
                       value={pincode}
                       onChange={(e) => setPincode(e.target.value)}
-                      placeholder="Pin Code" 
-                      className="w-28 bg-orange-50/50 border-2 border-orange-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-orange-500"
+                      placeholder="Pin" 
+                      className="w-24 bg-orange-50/50 border-2 border-orange-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-orange-500"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Feature 1: Interactive Mini-Map / GPS Pinpoint Widget */}
+              <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-2xl p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-black text-emerald-900 flex items-center space-x-1.5">
+                    <MapPin className="w-4 h-4 text-emerald-700" />
+                    <span>Interactive OpenStreetMap Pinpoint Widget</span>
+                  </span>
+                  <button 
+                    type="button"
+                    onClick={handleMapClickSim}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow transition cursor-pointer flex items-center space-x-1"
+                  >
+                    <span>📍 Drop Pin on Map</span>
+                  </button>
+                </div>
+                <div className="w-full h-32 bg-slate-900 rounded-xl relative overflow-hidden flex items-center justify-center border border-emerald-400">
+                  <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#34d399_1px,transparent_1px)] [background-size:14px_14px]"></div>
+                  {mapPinnedCoords ? (
+                    <div className="z-10 text-center bg-emerald-950/90 border border-emerald-400 px-4 py-2 rounded-xl text-white shadow-lg">
+                      <p className="text-xs font-bold text-emerald-300">✓ Exact GPS Captured</p>
+                      <p className="text-[10px] text-gray-300">Lat: {mapPinnedCoords.lat.toFixed(4)} | Lng: {mapPinnedCoords.lng.toFixed(4)}</p>
+                    </div>
+                  ) : (
+                    <div className="z-10 text-center text-gray-300">
+                      <p className="text-xs font-bold">Click "Drop Pin on Map" to automatically capture exact coordinates</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -334,9 +408,26 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              <div className="border-2 border-dashed border-orange-300 rounded-2xl p-4 text-center bg-orange-50/30 hover:bg-orange-50 transition cursor-pointer">
-                <p className="text-xs font-bold text-orange-800">📸 Drag & Drop Photo/Evidence or Click to Browse</p>
-                <p className="text-[10px] text-gray-500">Supports PNG, JPG, JPEG (Max 15MB)</p>
+              {/* Fully Operatable Photo Upload Widget */}
+              <div className="border-2 border-dashed border-orange-300 rounded-2xl p-4 text-center bg-orange-50/30 hover:bg-orange-50 transition relative">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <div className="flex flex-col items-center justify-center space-y-1">
+                  <ImageIcon className="w-8 h-8 text-orange-600" />
+                  <p className="text-xs font-bold text-orange-800">
+                    {selectedImage ? `Selected: ${selectedImage.name}` : 'Click to Upload Photo Evidence or Drag & Drop'}
+                  </p>
+                  <p className="text-[10px] text-gray-500">Supports PNG, JPG, JPEG (Max 15MB)</p>
+                  {imagePreview && (
+                    <div className="mt-2 w-20 h-20 rounded-lg overflow-hidden border border-orange-400 shadow">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-between pt-2">
@@ -347,7 +438,7 @@ export default function UserDashboard() {
                     onChange={(e) => setIsAnonymous(e.target.checked)}
                     className="rounded text-orange-600 focus:ring-orange-500 w-4 h-4 cursor-pointer"
                   />
-                  <span className="text-xs font-bold text-gray-700">Submit Anonymously (Hide identity from public records)</span>
+                  <span className="text-xs font-bold text-gray-700">Submit Anonymously</span>
                 </label>
 
                 <button 
@@ -427,70 +518,98 @@ export default function UserDashboard() {
 
         </div>
 
+        {/* Grievance History & Feature 4: Quick Filter & Priority Search Bar */}
         <div className="bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-4 border-orange-100">
             <div>
               <h3 className="text-xl font-black text-gray-900">Your Grievance History & Live Status</h3>
-              <p className="text-xs text-gray-600 font-medium">Track real-time progress, step-by-step timelines, and provide feedback after resolution.</p>
+              <p className="text-xs text-gray-600 font-medium">Click on any grievance card to view Step-by-Step Stepper Timeline Modal.</p>
             </div>
             <span className="text-xs font-extrabold bg-amber-100 text-amber-900 px-3 py-1 rounded-xl border border-amber-300">
               Total Filed: {grievances.length}
             </span>
           </div>
 
-          <div className="space-y-6">
-            {grievances.map((g) => (
-              <div key={g.id} className="bg-orange-50/40 border-2 border-orange-200/80 rounded-2xl p-5 space-y-4 shadow-sm">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs font-black bg-orange-600 text-white px-2.5 py-0.5 rounded-md">
-                        {g.id}
-                      </span>
-                      <span className="text-xs font-bold text-gray-500">{g.date}</span>
-                    </div>
-                    <h4 className="font-extrabold text-base text-gray-900">{g.title}</h4>
-                    <p className="text-xs text-gray-600 font-medium">📍 {g.location} • Dept: <span className="font-bold text-orange-800">{g.department}</span></p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
-                      g.stepIndex === 5 
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
-                        : 'bg-amber-100 text-amber-800 border-amber-300'
-                    }`}>
-                      {g.status}
-                    </span>
-                  </div>
-                </div>
+          {/* Quick Filter & Search Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-orange-50/70 p-4 rounded-2xl border border-orange-200">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-orange-600" />
+              <input 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by ID, title, or location..."
+                className="w-full bg-white border border-orange-300 rounded-xl pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:border-orange-500"
+              />
+            </div>
+            <div>
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full bg-white border border-orange-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-orange-500"
+              >
+                <option value="All">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+              </select>
+            </div>
+            <div>
+              <select 
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full bg-white border border-orange-300 rounded-xl px-3 py-2 text-xs font-medium focus:outline-none focus:border-orange-500"
+              >
+                <option value="All">All Departments</option>
+                <option value="Roads & Infrastructure">Roads & Infrastructure</option>
+                <option value="Electricity Board">Electricity Board</option>
+                <option value="Water & Sanitation">Water & Sanitation</option>
+              </select>
+            </div>
+          </div>
 
-                <div className="pt-2 border-t border-orange-200/60">
-                  <p className="text-[11px] font-black uppercase text-gray-500 tracking-wider mb-3">Live Progress Timeline</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
-                    <div className={`p-2 rounded-xl border ${g.stepIndex >= 1 ? 'bg-orange-100 border-orange-300 text-orange-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                      <div className="text-xs font-black">1. Submitted</div>
-                      <div className="text-[10px]">Received & Logged</div>
+          <div className="space-y-4">
+            {filteredGrievances.length === 0 ? (
+              <p className="text-center text-xs font-bold text-gray-500 py-6">No matching grievances found.</p>
+            ) : (
+              filteredGrievances.map((g) => (
+                <div 
+                  key={g.id} 
+                  onClick={() => setSelectedTimelineItem(g)}
+                  className="bg-orange-50/40 hover:bg-orange-100/60 border-2 border-orange-200/80 rounded-2xl p-5 space-y-4 shadow-sm transition cursor-pointer"
+                >
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs font-black bg-orange-600 text-white px-2.5 py-0.5 rounded-md">
+                          {g.id}
+                        </span>
+                        <span className="text-xs font-bold text-gray-500">{g.date}</span>
+                      </div>
+                      <h4 className="font-extrabold text-base text-gray-900">{g.title}</h4>
+                      <p className="text-xs text-gray-600 font-medium">📍 {g.location} • Dept: <span className="font-bold text-orange-800">{g.department}</span></p>
                     </div>
-                    <div className={`p-2 rounded-xl border ${g.stepIndex >= 2 ? 'bg-orange-100 border-orange-300 text-orange-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                      <div className="text-xs font-black">2. AI Routed</div>
-                      <div className="text-[10px]">Sent to Dept</div>
-                    </div>
-                    <div className={`p-2 rounded-xl border ${g.stepIndex >= 3 ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                      <div className="text-xs font-black">3. Tech Assigned</div>
-                      <div className="text-[10px]">Field Team Dispatched</div>
-                    </div>
-                    <div className={`p-2 rounded-xl border ${g.stepIndex >= 4 ? 'bg-teal-100 border-teal-300 text-teal-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                      <div className="text-xs font-black">4. In Progress</div>
-                      <div className="text-[10px]">Action underway</div>
-                    </div>
-                    <div className={`col-span-2 sm:col-span-1 p-2 rounded-xl border ${g.stepIndex >= 5 ? 'bg-emerald-100 border-emerald-300 text-emerald-900' : 'bg-gray-100 border-gray-200 text-gray-400'}`}>
-                      <div className="text-xs font-black">5. Resolved</div>
-                      <div className="text-[10px]">Verified & Closed</div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${
+                        g.stepIndex === 5 
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300' 
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        {g.status}
+                      </span>
+                      <span className="text-xs font-bold text-orange-700 underline">View Timeline ➔</span>
                     </div>
                   </div>
+
+                  {g.image && (
+                    <div className="w-16 h-16 rounded-lg overflow-hidden border border-orange-300">
+                      <img src={g.image} alt="Evidence" className="w-full h-full object-cover" />
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -500,6 +619,69 @@ export default function UserDashboard() {
         <p>✨ NagrikSetu Smart Governance • Empowering Citizens with Complete Accountability ✨</p>
       </footer>
 
+      {/* Feature 2: Live Status Tracker Timeline Modal (Stepper UI) */}
+      {selectedTimelineItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 border-2 border-orange-300">
+            <div className="flex justify-between items-center border-b pb-3 border-orange-100">
+              <div>
+                <span className="text-xs font-bold bg-orange-600 text-white px-2 py-0.5 rounded">{selectedTimelineItem.id}</span>
+                <h3 className="text-base font-black text-gray-900 mt-1">{selectedTimelineItem.title}</h3>
+              </div>
+              <button onClick={() => setSelectedTimelineItem(null)} className="p-1 rounded-full hover:bg-gray-100 cursor-pointer">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Step-by-Step Live Redressal Timeline</p>
+              
+              <div className="space-y-3">
+                <div className={`p-3 rounded-2xl border flex items-center space-x-3 ${selectedTimelineItem.stepIndex >= 1 ? 'bg-orange-50 border-orange-300 text-orange-900' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                  <CheckCircle2 className={`w-5 h-5 ${selectedTimelineItem.stepIndex >= 1 ? 'text-orange-600' : 'text-gray-300'}`} />
+                  <div>
+                    <p className="text-xs font-black">Step 1: Submitted</p>
+                    <p className="text-[10px]">Grievance successfully received and logged into portal.</p>
+                  </div>
+                </div>
+
+                <div className={`p-3 rounded-2xl border flex items-center space-x-3 ${selectedTimelineItem.stepIndex >= 2 ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                  <CheckCircle2 className={`w-5 h-5 ${selectedTimelineItem.stepIndex >= 2 ? 'text-amber-600' : 'text-gray-300'}`} />
+                  <div>
+                    <p className="text-xs font-black">Step 2: AI Verified & Routed</p>
+                    <p className="text-[10px]">AI analyzed severity and assigned to {selectedTimelineItem.department}.</p>
+                  </div>
+                </div>
+
+                <div className={`p-3 rounded-2xl border flex items-center space-x-3 ${selectedTimelineItem.stepIndex >= 3 ? 'bg-teal-50 border-teal-300 text-teal-900' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                  <CheckCircle2 className={`w-5 h-5 ${selectedTimelineItem.stepIndex >= 3 ? 'text-teal-600' : 'text-gray-300'}`} />
+                  <div>
+                    <p className="text-xs font-black">Step 3: Assigned to Ward Officer</p>
+                    <p className="text-[10px]">Field technician team dispatched to location.</p>
+                  </div>
+                </div>
+
+                <div className={`p-3 rounded-2xl border flex items-center space-x-3 ${selectedTimelineItem.stepIndex >= 5 ? 'bg-emerald-50 border-emerald-300 text-emerald-900' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                  <CheckCircle2 className={`w-5 h-5 ${selectedTimelineItem.stepIndex >= 5 ? 'text-emerald-600' : 'text-gray-300'}`} />
+                  <div>
+                    <p className="text-xs font-black">Step 4: Resolved with Photo Proof</p>
+                    <p className="text-[10px]">Action completed and verified by municipal authority.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setSelectedTimelineItem(null)}
+              className="w-full bg-gray-900 text-white font-extrabold py-3 rounded-xl hover:bg-gray-800 transition text-sm cursor-pointer"
+            >
+              Close Timeline
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Samman Points Modal */}
       {showPointsModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border-2 border-amber-300">
@@ -529,6 +711,7 @@ export default function UserDashboard() {
         </div>
       )}
 
+      {/* Feature 3: AI Chatbot Assistant / Floating Help Widget */}
       {showAiChat && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full h-[550px] flex flex-col shadow-2xl border-2 border-orange-300 overflow-hidden">

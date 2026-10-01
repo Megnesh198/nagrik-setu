@@ -62,7 +62,7 @@ export default function AdminLoginPage() {
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 transition-colors font-medium rounded-lg text-white shadow-lg shadow-emerald-600/20"
+            className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 transition-colors font-medium rounded-lg text-white shadow-lg shadow-emerald-600/20 cursor-pointer"
           >
             Login to Dashboard
           </button>
