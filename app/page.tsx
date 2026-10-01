@@ -77,7 +77,7 @@ export default function Home() {
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-black tracking-wide text-slate-900">NagrikSetu</h1>
-              <span className="bg-orange-500/10 text-orange-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-orange-500/30">Srinivix College of Engineering</span>
+              <span className="bg-orange-500/10 text-orange-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-orange-500/30">Srinix College of Engineering</span>
             </div>
             <p className="text-[11px] text-slate-500 font-medium tracking-wide">IN NATIONAL PUBLIC SERVICE & UTILITY PORTAL</p>
           </div>
@@ -169,8 +169,8 @@ export default function Home() {
 
         {/* Institutional Copyright Footer */}
         <div className="pt-8 border-t border-slate-200 text-center text-xs text-slate-600 pb-4 space-y-1">
-          <p className="font-bold text-slate-700">Truth Alone Triumphs &bull; Srinivix College of Engineering &bull; NagrikSetu Smart Governance Initiative</p>
-          <p>© 2026 Srinivix College of Engineering. All rights reserved.</p>
+          <p className="font-bold text-slate-700">Truth Alone Triumphs &bull; Srinix College of Engineering &bull; NagrikSetu Smart Governance Initiative</p>
+          <p>© 2026 Srinix College of Engineering. All rights reserved.</p>
         </div>
       </main>
 
