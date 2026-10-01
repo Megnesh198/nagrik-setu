@@ -37,7 +37,17 @@ export default function UserDashboard() {
     { sender: 'ai', text: 'Namaste! Main Setu AI hoon. Aap apni shiqayat yahan likh sakte hain ya bol sakte hain, main aapka form automatically fill kar dunga!' }
   ]);
 
-  const [grievances, setGrievances] = useState([
+  const [grievances, setGrievances] = useState<Array<{
+    id: string;
+    title: string;
+    department: string;
+    urgency: string;
+    location: string;
+    status: string;
+    stepIndex: number;
+    date: string;
+    image: string | null;
+  }>>([
     {
       id: 'NS-8492',
       title: 'Broken streetlight near main chowk',
@@ -73,7 +83,7 @@ export default function UserDashboard() {
             status: item.status || 'Pending',
             stepIndex: item.status === 'Resolved' ? 5 : 2,
             date: item.date || '2026-10-01',
-            image: item.image || null
+            image: item.image ? String(item.image) : null
           }));
           setGrievances(mapped);
         }
@@ -193,7 +203,6 @@ export default function UserDashboard() {
     }, 800);
   };
 
-  // Filtered grievances calculation
   const filteredGrievances = grievances.filter(g => {
     const matchesSearch = g.title.toLowerCase().includes(searchQuery.toLowerCase()) || g.id.toLowerCase().includes(searchQuery.toLowerCase()) || g.location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'All' || g.status === statusFilter;
@@ -219,7 +228,6 @@ export default function UserDashboard() {
             </div>
           </div>
 
-          {/* Real-time Digital Clock & Controls */}
           <div className="flex items-center space-x-3 sm:space-x-4">
             <div className="hidden xl:flex items-center space-x-1.5 bg-orange-100/70 border border-orange-300 px-3 py-1.5 rounded-xl text-xs font-black text-orange-900">
               <Clock className="w-4 h-4 text-orange-700" />
@@ -249,7 +257,6 @@ export default function UserDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-8 space-y-10">
         
-        {/* Banner */}
         <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-emerald-700 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           <div className="space-y-2 text-center sm:text-left z-10">
@@ -273,7 +280,6 @@ export default function UserDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Raise Grievance Form */}
           <div className="lg:col-span-2 bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
             <div className="flex items-center justify-between border-b pb-4 border-orange-100">
               <div>
@@ -320,7 +326,6 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Feature 1: Interactive Mini-Map / GPS Pinpoint Widget */}
               <div className="bg-emerald-50/70 border-2 border-emerald-300 rounded-2xl p-4 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-black text-emerald-900 flex items-center space-x-1.5">
@@ -408,7 +413,6 @@ export default function UserDashboard() {
                 </div>
               </div>
 
-              {/* Fully Operatable Photo Upload Widget */}
               <div className="border-2 border-dashed border-orange-300 rounded-2xl p-4 text-center bg-orange-50/30 hover:bg-orange-50 transition relative">
                 <input 
                   type="file" 
@@ -518,7 +522,6 @@ export default function UserDashboard() {
 
         </div>
 
-        {/* Grievance History & Feature 4: Quick Filter & Priority Search Bar */}
         <div className="bg-white/90 backdrop-blur border-2 border-orange-200 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-4 border-orange-100">
             <div>
@@ -530,7 +533,6 @@ export default function UserDashboard() {
             </span>
           </div>
 
-          {/* Quick Filter & Search Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-orange-50/70 p-4 rounded-2xl border border-orange-200">
             <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-orange-600" />
@@ -619,7 +621,6 @@ export default function UserDashboard() {
         <p>✨ NagrikSetu Smart Governance • Empowering Citizens with Complete Accountability ✨</p>
       </footer>
 
-      {/* Feature 2: Live Status Tracker Timeline Modal (Stepper UI) */}
       {selectedTimelineItem && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-6 border-2 border-orange-300">
@@ -681,7 +682,6 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Samman Points Modal */}
       {showPointsModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 border-2 border-amber-300">
@@ -711,7 +711,6 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* Feature 3: AI Chatbot Assistant / Floating Help Widget */}
       {showAiChat && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full h-[550px] flex flex-col shadow-2xl border-2 border-orange-300 overflow-hidden">
@@ -726,7 +725,7 @@ export default function UserDashboard() {
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-orange-50/30">
-              {aiChatMessages.map((msg, index) => (
+              {aiChatMessages.link ? null : aiChatMessages.map((msg, index) => (
                 <div key={index} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-3 rounded-2xl text-xs font-medium shadow-sm ${
                     msg.sender === 'user' 
